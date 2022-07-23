@@ -38,19 +38,31 @@ char_is_path_separator (char c)
 {
   return strchr(PATH_DELIMITER_CHARS, c) != NULL;
 }
+/* 
+ * 219 + 36 = 255
+ * . + 16_byte_hash + .torrent + .tmp.XXXXXX = 36 bytes
+ * . + 16_byte_hash + .resume + .tmp.XXXXXX = 35 bytes
+ * see tr_variantToFile() for more explanation
+ */
+#define MAX_NAME_LENGTH 219
 
 char*
 tr_metainfoGetBasename (const tr_info * inf)
 {
   size_t i;
-  const char * name = inf->originalName;
-  const size_t name_len = strlen (name);
+  char * name = inf->originalName;
+  size_t name_len = strlen (name);
+
+  name_len = MIN(name_len, MAX_NAME_LENGTH);
+  name = tr_strndup(name, name_len);
+
   char * ret = tr_strdup_printf ("%s.%16.16s", name, inf->hashString);
 
   for (i=0; i<name_len; ++i)
     if (char_is_path_separator (ret[i]))
       ret[i] = '_';
 
+  tr_free(name);
   return ret;
 }
 
