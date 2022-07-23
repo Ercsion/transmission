@@ -32,6 +32,7 @@
 #include "variant.h"
 #include "version.h"
 #include "web.h"
+#include "verify.h"
 
 #define RPC_VERSION     15
 #define RPC_VERSION_MIN 1
@@ -423,6 +424,17 @@ torrentVerify (tr_session               * session,
     }
 
   tr_free (torrents);
+  return NULL;
+}
+
+static const char*
+torrentVerifyStop (tr_session               * session UNUSED,
+                   tr_variant               * args_in UNUSED,
+                   tr_variant               * args_out UNUSED,
+                   struct tr_rpc_idle_data  * idle_data UNUSED)
+{
+  tr_verifyFinish();
+
   return NULL;
 }
 
@@ -2186,6 +2198,7 @@ methods[] =
   { "torrent-start-now",     true,  torrentStartNow     },
   { "torrent-stop",          true,  torrentStop         },
   { "torrent-verify",        true,  torrentVerify       },
+  { "torrent-verify-stop",   true,  torrentVerifyStop   },
   { "torrent-reannounce",    true,  torrentReannounce   },
   { "queue-move-top",        true,  queueMoveTop        },
   { "queue-move-up",         true,  queueMoveUp         },

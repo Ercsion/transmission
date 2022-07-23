@@ -27,6 +27,8 @@ void tr_verifyRemove (tr_torrent * tor);
 
 void tr_verifyClose (tr_session *);
 
+void tr_verifyFinish (void);
+
 /* @} */
 
 #endif

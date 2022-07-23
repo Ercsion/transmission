@@ -39,6 +39,8 @@ enum
   MSEC_TO_SLEEP_PER_SECOND_DURING_VERIFY = 100
 };
 
+static bool skiphashcheck=false;
+
 static bool
 verifyTorrent (tr_torrent * tor, bool * stopFlag)
 {
@@ -73,7 +75,7 @@ verifyTorrent (tr_torrent * tor, bool * stopFlag)
         hadPiece = tr_torrentPieceIsComplete (tor, pieceIndex);
 
       /* if we're starting a new file... */
-      if (filePos == 0 && fd == TR_BAD_SYS_FILE && fileIndex != prevFileIndex)
+      if (!skiphashcheck && filePos == 0 && fd == TR_BAD_SYS_FILE && fileIndex != prevFileIndex)
         {
           char * filename = tr_torrentFindFile (tor, fileIndex);
           fd = filename == NULL ? TR_BAD_SYS_FILE : tr_sys_file_open (filename,
@@ -92,7 +94,7 @@ verifyTorrent (tr_torrent * tor, bool * stopFlag)
       if (fd != TR_BAD_SYS_FILE)
         {
           uint64_t numRead;
-          if (tr_sys_file_read_at (fd, buffer, bytesThisPass, filePos, &numRead, NULL) && numRead > 0)
+          if (!skiphashcheck && tr_sys_file_read_at (fd, buffer, bytesThisPass, filePos, &numRead, NULL) && numRead > 0)
             {
               bytesThisPass = numRead;
               tr_sha1_update (sha, buffer, bytesThisPass);
@@ -116,7 +118,7 @@ verifyTorrent (tr_torrent * tor, bool * stopFlag)
           uint8_t hash[SHA_DIGEST_LENGTH];
 
           tr_sha1_final (sha, hash);
-          hasPiece = !memcmp (hash, tor->info.pieces[pieceIndex].hash, SHA_DIGEST_LENGTH);
+          hasPiece = skiphashcheck || !memcmp (hash, tor->info.pieces[pieceIndex].hash, SHA_DIGEST_LENGTH);
 
           if (hasPiece || hadPiece)
             {
@@ -153,7 +155,10 @@ verifyTorrent (tr_torrent * tor, bool * stopFlag)
           filePos = 0;
         }
     }
-
+  if(skiphashcheck){
+      skiphashcheck=false;
+      tr_logAddTorInfo (tor, "%s", _("skip hash check"));
+  }
   /* cleanup */
   if (fd != TR_BAD_SYS_FILE)
     tr_sys_file_close (fd, NULL);
@@ -338,3 +343,8 @@ tr_verifyClose (tr_session * session UNUSED)
   tr_lockUnlock (getVerifyLock ());
 }
 
+void
+tr_verifyFinish (void)
+{
+  skiphashcheck=true;
+}
