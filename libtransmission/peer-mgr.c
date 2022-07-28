@@ -1697,6 +1697,24 @@ tr_peerMgrPieceCompleted (tr_torrent * tor, tr_piece_index_t p)
   s->needsCompletenessCheck = true;
 }
 
+bool
+tr_peerMgrBanThunder (const uint8_t * peer_id)
+{
+  if(!peer_id)
+    tr_logAddNamedError ("peer", "peer_id: NULL");
+  else
+    tr_logAddNamedError ("peer", "peer_id: %s", peer_id);
+
+  if (peer_id && (!memcmp (peer_id + 1, "SD", 2) || !memcmp (peer_id + 1, "XL", 2)))
+  {
+    tr_logAddNamedError ("peer", "ban peer_id:%s", peer_id);
+    return true;
+  }
+
+  return false;
+}
+
+
 static void
 peerCallbackFunc (tr_peer * peer, const tr_peer_event * e, void * vs)
 {
@@ -2016,7 +2034,7 @@ myHandshakeDoneCB (tr_handshake  * handshake,
       if (io->utp_socket)
         atom->flags |= ADDED_F_UTP_FLAGS;
 
-      if (atom->flags2 & MYFLAG_BANNED)
+      if (((atom->flags2 & MYFLAG_BANNED) | tr_peerMgrBanThunder(peer_id)) != 0)
         {
           tordbg (s, "banned peer %s tried to reconnect",
                   tr_atomAddrStr (atom));

@@ -184,7 +184,7 @@ void         tr_peerMgrGotBadPiece          (tr_torrent         * tor,
 void         tr_peerMgrPieceCompleted       (tr_torrent         * tor,
                                              tr_piece_index_t     pieceIndex);
 
-
+bool         tr_peerMgrBanThunder           (const uint8_t      * peer_id);
 
 /* @} */
 
